@@ -1,24 +1,34 @@
 # Put here the functions that might be required by more than 1 model/table
+import pandas as pd
+
 
 class pipeline:
+    """
+        Fit the data and test each model in the pipeline individulally, while creating
+        the final submission file
+    """
 
     def __init__(self, stages):
-        self.stages = stages
+        self.names = []
+        self.models = []
+        
+        for name, model in stages:
+            self.names.append(name)
+            self.models.append(model)
+        
         self.n_stages = len(stages)
 
     def fit(self, X):
+        i=1
+        for model, name in zip(self.models, self.names):
+            print("Training model {i}/{self.n_stages} : {name}...")
+            model.fit(X)
+            print("Finished training model {name}...")
+            i+=1
 
-        for stage in self.stages:
-            stage.fit(X)
+    def predict(self, X_test):
+        res = pd.DataFrame()
+        for i in range(self.n_stages):
+            res[self.names[i]] = self.models[i].predict(X_test)
 
-    def predict(self, test):
-        
-        for stage in self.stages[:-1]:
-            test = stage.predict(test)
-
-        return self.stages[-1].predict(test)
-
-    def evaluate():
-        pass
-
-    # [preprocessor, model]
+        return res

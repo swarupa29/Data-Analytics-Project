@@ -10,13 +10,17 @@ from lightgbm import LGBMClassifier
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import LabelEncoder
 
+
 categorical_cols = ['CREDIT_ACTIVE', 'CREDIT_CURRENCY', 'CREDIT_TYPE']
 to_drop = []
 
 class bureau:
 
     def __init__(self):
-        return None
+        
+        self.categorical_cols = ['CREDIT_ACTIVE', 'CREDIT_CURRENCY', 'CREDIT_TYPE']
+        self.to_drop = []
+        return
 
     def fit(self, joined) -> object:
         self.labelEncoders = {}
@@ -160,7 +164,6 @@ class bureau:
         # lgb 
         lgb = self.lgb
         pred = lgb.predict(df)
-        L1['LGB_Classifier'] = pred
+        L1['LGB_Classifier_Bureau'] = pred
 
-        # TODO: create csv with prediction 
         return L1

@@ -97,7 +97,7 @@ class bureau:
         train_cols = list(set(df.columns)-{'TARGET'})
 
         # lgb 
-        lgb = LGBMClassifier()
+        lgb = LGBMClassifier(class_weight='balanced')
         lgb.fit(df[train_cols], df['TARGET'])
         self.lgb = lgb
         

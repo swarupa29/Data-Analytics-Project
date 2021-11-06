@@ -6,20 +6,22 @@ from lightgbm import LGBMClassifier
 from installments_payments import installments
 from bureau import bureau
 from application_train import application_train
-
+from credit_bal import credit_balance
 
 def main(main_df, test_df, output) -> None:
     train_target = main_df[['TARGET', 'SK_ID_CURR']]
     test_target = test_df['SK_ID_CURR'].copy()
     
     # store results of each table in L1
-
-    L1 = pd.DataFrame(index=test_target)
+    try:
+        L1 = pd.read_csv(f'output/{output}.csv', index_col=0)
+    except:
+        L1 = pd.DataFrame(index=test_target)
 
     to_train = {
-        'bureau': True,
-        'application_train': True,
-        'installments_payments': True,
+        'bureau': False,
+        'application_train': False,
+        'installments_payments': False,
         'credit_card_balance': True,
         'POS_CASH_balance': True,
         'previous_application': False
@@ -38,7 +40,7 @@ def main(main_df, test_df, output) -> None:
         except:
             pass
         L1 = L1.join(res, on='SK_ID_CURR', how='left')
-        del bureau_df, res, bureau_model
+        del bureau_df, res, bureau_model, bureau_test
         gc.collect()
         L1.to_csv(f'output/{output}.csv')
 
@@ -55,7 +57,7 @@ def main(main_df, test_df, output) -> None:
         except:
             pass
         L1 = L1.join(res, on='SK_ID_CURR', how='left')
-        del install_df, install_model, res
+        del install_df, install_model, res, install_test
         gc.collect()
         L1.to_csv(f'output/{output}.csv')
 
@@ -64,7 +66,6 @@ def main(main_df, test_df, output) -> None:
         main_train=application_train()
         main_train.fit(main_df)
         res=main_train.predict(test_df)
-        print(res)
         try:
             L1.drop(res.columns, axis=1, inplace=True)
         except:
@@ -72,7 +73,22 @@ def main(main_df, test_df, output) -> None:
         L1 = L1.join(res, on='SK_ID_CURR', how='left')
         del main_train, res
         L1.to_csv(f'output/{output}.csv')
-
+    
+    # Credit_balance
+    if to_train['credit_card_balance']:
+        cred_df = pd.read_csv('credit_risk/credit_card_balance.csv')
+        cred_joined = cred_df.merge(train_target, on='SK_ID_CURR', how='right')
+        cred_model=credit_balance()
+        cred_model.fit(cred_joined)
+        cred_test = cred_df.merge(test_target, on='SK_ID_CURR', how='right')
+        res=cred_model.predict(cred_test)
+        try:
+            L1.drop(res.columns, axis=1, inplace=True)
+        except:
+            pass
+        L1 = L1.join(res, on='SK_ID_CURR', how='left')
+        del cred_test, cred_joined, cred_df, res, cred_model
+        L1.to_csv(f'output/{output}.csv')
 
     # 
 if __name__ == '__main__':

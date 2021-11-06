@@ -12,6 +12,10 @@ import lightgbm as lgb
 
 class application_train:
     def __init__(self):
+        self.to_drop=[]
+        self.cat_cols=[]
+        self.cont_cols=[]
+        self.dis_cols=[]
         return None
 
     def create(self):
@@ -20,6 +24,9 @@ class application_train:
     def fit(self, df):
         self.df=df
         self.labelEncoders = {}
+        self.catModes={}
+        self.numModes={}
+        self.numMeans={}
         self.model=None
 
         #dropping all columns with mv>170000
@@ -27,46 +34,65 @@ class application_train:
         l=[]
         for i in range(len(lst)):
             if lst[i] >170000:
-                l.append(i)
-        self.df.drop(self.df.columns[l],axis=1,inplace=True)
+                l.append(df.columns[i])
+        self.df.drop(l,axis=1,inplace=True)
+        self.to_drop=l
+
 
         #fill categorical values with mode
         cat_cols=self.df.select_dtypes('object').nunique().index.tolist()
         for i in cat_cols:
             self.df[i].fillna(self.df[i].mode()[0], inplace=True)
+            self.catModes[i]=self.df[i].mode()[0]
+        self.cat_cols=cat_cols
+
 
         #for numeric data
         df_num = self.df.select_dtypes(include=np.number) #make a seperate dataset with them
-        df_num = df_num.iloc[: , 1:]
         num_cols= self.df.select_dtypes(include=np.number).nunique().index.tolist()
 
         #divide the numerical columns into numeric categorical and continous variable columns. If the column has less than 10 distinct values, it is treated to be categorical data
-        num_cols.pop(0)
         dis_cols=[]
+        cont_cols=[]
         for i in num_cols:
-            if(len(df_num[i].unique())<=10):
+            if(len(df_num[i].unique())<=10 and i!='TARGET'):
                 dis_cols.append(i)
+            elif(i!='TARGET'):
+                cont_cols.append(i)
+        self.dis_cols = dis_cols
+        self.cont_cols = cont_cols
+
 
         #mv for numeric categories is mode
         for i in dis_cols:
-            self.df[i].fillna(value=self.df[i].mode(),inplace=True)
+            self.df[i].fillna(value=self.df[i].mode()[0],inplace=True)
+            self.numModes[i]=self.df[i].mode()[0]
+
 
         #imputing other missing values
-        df_num = self.df.select_dtypes(include=np.number)
-        imputer = IterativeImputer(imputation_order='ascending') #by default the estimator used is bayesian ridge regressor
-        imputer.fit(df_num)
-        Xtrans = imputer.transform(df_num)
+        #df_num = self.df.select_dtypes(include=np.number)
+        #imputer = IterativeImputer(imputation_order='ascending') #by default the estimator used is bayesian ridge regressor
+        #imputer.fit(df_num)
+        #Xtrans = imputer.transform(df_num)
 
-        num_cols = self.df.select_dtypes(include=np.number).columns.tolist()
+        for i in cont_cols:
+            val=self.df[i].mean()
+            self.df[i].fillna(value=val,inplace=True)
+            self.numMeans[i]=val
+
+
+        #num_cols = self.df.select_dtypes(include=np.number).columns.tolist()
         cat_vals = self.df.select_dtypes('object')
-        df_new = pd.DataFrame(data = Xtrans,columns = num_cols)
-        final_df=pd.concat([df_new,cat_vals], axis=1, join='inner')
+        num_vals=self.df.select_dtypes(include=np.number)
+        #df_new = pd.DataFrame(data = Xtrans,columns = num_cols)
+        final_df=pd.concat([num_vals,cat_vals], axis=1, join='inner')
 
         #after getting dataset, pre processing it and training model
-        for i in cat_cols:
+        for i in self.cat_cols:
             enc=LabelEncoder()
             final_df[i]=enc.fit_transform(final_df[i])
             self.labelEncoders[i] = enc
+
 
         y=final_df['TARGET']
         x=final_df.drop(['TARGET','SK_ID_CURR'],axis=1)
@@ -78,16 +104,26 @@ class application_train:
     
     def predict(self, X_test) -> pd.DataFrame:
 
-        L1 = pd.DataFrame()
+        L2 = pd.DataFrame()
+    
+        X_test.drop(self.to_drop,axis=1,inplace=True)
+        for i in self.cat_cols:
+            X_test[i].fillna(self.catModes[i], inplace=True)
+        for i in self.dis_cols:
+            X_test[i].fillna(self.numModes[i], inplace=True)
+        
+        for i in self.cont_cols:
+            X_test[i].fillna(self.numMeans[i], inplace=True)
 
-        cat_cols=X_test.select_dtypes('object').nunique().index.tolist()
-        for i in cat_cols:
+
+        for i in self.cat_cols:
             X_test[i]=self.labelEncoders[i].transform(X_test[i])
+
         
         X_test.drop('SK_ID_CURR', inplace=True, axis=1)
         ypred=self.model.predict(X_test)
-        L1['main']=ypred
-        return L1
+        L2['main']=ypred
+        return L2
 
 
 

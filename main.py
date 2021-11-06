@@ -20,6 +20,11 @@ def main() -> None:
     bureau_model.fit(bureau_joined)
     bureau_test = bureau_df.merge(test_target, on='SK_ID_CURR', how='right')
     res = bureau_model.predict(bureau_test)
+
+    #for application_train
+    main_train=application_train()
+    main_train.fit(main_df)
+    res2=main_train.predict(test_df)
     
     for col in res.columns:
         L1[col] = res[col]

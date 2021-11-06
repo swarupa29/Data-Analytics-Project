@@ -96,7 +96,7 @@ class application_train:
 
         y=final_df['TARGET']
         x=final_df.drop(['TARGET','SK_ID_CURR'],axis=1)
-        model = lgb.LGBMRegressor(learning_rate=0.09,max_depth=-5,random_state=42,max_iterations=120)
+        model = lgb.LGBMClassifier(class_weight='balanced')
         model.fit(x,y)
         self.model=model
         return self
@@ -104,7 +104,7 @@ class application_train:
     
     def predict(self, X_test) -> pd.DataFrame:
 
-        L2 = pd.DataFrame()
+        L1 = pd.DataFrame(index=X_test['SK_ID_CURR'])
     
         X_test.drop(self.to_drop,axis=1,inplace=True)
         for i in self.cat_cols:
@@ -121,9 +121,9 @@ class application_train:
 
         
         X_test.drop('SK_ID_CURR', inplace=True, axis=1)
-        ypred=self.model.predict(X_test)
-        L2['main']=ypred
-        return L2
+        ypred=self.model.predict_proba(X_test)[:, 1]
+        L1['main']=ypred
+        return L1
 
 
 

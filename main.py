@@ -24,8 +24,9 @@ def main() -> None:
     bureau_test = bureau_df.merge(test_target, on='SK_ID_CURR', how='right')
     res = bureau_model.predict(bureau_test)
     L1 = L1.join(res, on='SK_ID_CURR', how='left')
-    del bureau_df
+    del bureau_df, res, bureau_model
     gc.collect()
+    L1.to_csv('output/L1.csv')
 
     # Installments Payments
     install_df = pd.read_csv('credit_risk/installments_payments.csv')
@@ -35,18 +36,17 @@ def main() -> None:
     install_test = install_df.merge(test_target, on='SK_ID_CURR', how='right')
     res = install_model.predict(install_test)
     L1 = L1.join(res, on='SK_ID_CURR', how='left')
-    del install_df
+    del install_df, install_model, res
     gc.collect()
+    L1.to_csv('output/L1.csv')
 
     # Application_train
     main_train=application_train()
     main_train.fit(main_df)
     res=main_train.predict(test_df)
     L1 = L1.join(res, on='SK_ID_CURR', how='left')
-    del install_df
-    gc.collect()
-
-    L1.to_csv('output/L1.csv', index=False)
+    del main_train, res
+    L1.to_csv('output/L1.csv')
 
 if __name__ == '__main__':
     main()

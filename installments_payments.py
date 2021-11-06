@@ -73,7 +73,7 @@ class installments:
         edf['INSTAL_COUNT'] = X_test.groupby('SK_ID_CURR').size()
         
         lgb = self.lgb
-        pred = lgb.predict(edf)
+        pred = lgb.predict_proba(edf)[:,1]
         L1['Installments'] = pred
 
         return L1

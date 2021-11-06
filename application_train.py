@@ -22,6 +22,7 @@ class application_train:
         return self
 
     def fit(self, df):
+        print("Fitting application_train")
         self.df=df
         self.labelEncoders = {}
         self.catModes={}
@@ -103,9 +104,9 @@ class application_train:
 
     
     def predict(self, X_test) -> pd.DataFrame:
+        print("Predicting application_train")
+        L1 = pd.DataFrame(index=X_test['SK_ID_CURR'].unique())
 
-        L1 = pd.DataFrame(index=X_test['SK_ID_CURR'])
-    
         X_test.drop(self.to_drop,axis=1,inplace=True)
         for i in self.cat_cols:
             X_test[i].fillna(self.catModes[i], inplace=True)

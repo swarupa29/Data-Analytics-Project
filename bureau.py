@@ -156,7 +156,7 @@ class bureau:
         return self
     
     def predict(self, X_test) -> pd.DataFrame:
-        
+        print("Fitting bureau and bureau balance")
         # Empty dataframe to store model results
         L1 = pd.DataFrame(index=X_test['SK_ID_CURR'].unique())
 

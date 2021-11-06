@@ -14,6 +14,7 @@ class installments:
         return self
 
     def fit(self, df):
+        print("Fitting installment_payments")
         df['PAYMENT_PERC'] = df['AMT_PAYMENT'] / df['AMT_INSTALMENT']
         df['PAYMENT_DIFF'] = df['AMT_INSTALMENT'] - df['AMT_PAYMENT']
         
@@ -55,6 +56,7 @@ class installments:
         return self
 
     def predict(self, X_test):
+        print("Predicting installment_payments")
         L1 = pd.DataFrame(index=X_test['SK_ID_CURR'].unique())
         edf = pd.DataFrame()
         edf['SK_ID_CURR'] = X_test['SK_ID_CURR'].unique()

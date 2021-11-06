@@ -7,6 +7,7 @@ from installments_payments import installments
 from bureau import bureau
 from application_train import application_train
 from credit_bal import credit_balance
+from prev_appl import prev_applications
 
 def main(main_df, test_df, output) -> None:
     train_target = main_df[['TARGET', 'SK_ID_CURR']]
@@ -22,9 +23,9 @@ def main(main_df, test_df, output) -> None:
         'bureau': False,
         'application_train': False,
         'installments_payments': False,
-        'credit_card_balance': True,
-        'POS_CASH_balance': True,
-        'previous_application': False
+        'credit_card_balance': False,
+        'POS_CASH_balance': False,
+        'previous_application': True
     }
 
     # Bureau +  Bureau Balance
@@ -88,6 +89,22 @@ def main(main_df, test_df, output) -> None:
             pass
         L1 = L1.join(res, on='SK_ID_CURR', how='left')
         del cred_test, cred_joined, cred_df, res, cred_model
+        L1.to_csv(f'output/{output}.csv')
+
+
+    if to_train['previous_application']:
+        prev_df = pd.read_csv('credit_risk/previous_application.csv')
+        prev_joined = prev_df.merge(train_target, on='SK_ID_CURR', how='right')
+        prev_model= prev_applications()
+        prev_model.fit(prev_joined)
+        prev_test = prev_df.merge(test_target, on='SK_ID_CURR', how='right')
+        res=prev_model.predict(prev_test)
+        try:
+            L1.drop(res.columns, axis=1, inplace=True)
+        except:
+            pass
+        L1 = L1.join(res, on='SK_ID_CURR', how='left')
+        del prev_test, prev_joined, prev_df, res, prev_model
         L1.to_csv(f'output/{output}.csv')
 
     # 

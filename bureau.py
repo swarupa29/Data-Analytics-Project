@@ -9,7 +9,7 @@ from lightgbm import LGBMClassifier
 # from xgboost import XGBClassifier as xgb
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import LabelEncoder
-
+from utils import replace_w_nan, categorical_mode as mode
 
 categorical_cols = ['CREDIT_ACTIVE', 'CREDIT_CURRENCY', 'CREDIT_TYPE']
 to_drop = []
@@ -23,19 +23,24 @@ class bureau:
         return
 
     def fit(self, joined) -> object:
+        print("Training on Bureau and BureauBalance")
         self.labelEncoders = {}
 
        # LABEL ENCODING
+        print("Encoding labels...")
         for col in categorical_cols:
             enc = LabelEncoder()
             joined[col] = enc.fit_transform(joined[col])
             self.labelEncoders[col] = enc
 
-
         # DROP UNECESSARY FEATURES
+        print("Dropping features...")
         for col in to_drop:
             joined.drop(col, inplace=True)
         
+        joined = replace_w_nan(joined)
+        joined.fillna(method='ffill', inplace=True)
+
         # Creating dataset to store results in
         df = pd.DataFrame()
         df['SK_ID_CURR'] = joined['SK_ID_CURR'].unique()
@@ -44,8 +49,51 @@ class bureau:
         
         
         # FEATURE ENGINEERING
+        ops = ['min', 'max', 'mean', 'var']
+        self.ops = ops
 
+        # JOINING WITH BUREAU_BALANCE
+        bureau_ids = joined[['SK_ID_BUREAU', 'SK_ID_CURR']]
+        bureau_balance = pd.read_csv('credit_risk/bureau_balance.csv')
+        bureau_balance = bureau_balance.merge(bureau_ids, on='SK_ID_BUREAU', how='inner')
+        bureau_balance = replace_w_nan(bureau_balance)
+        bureau_balance.fillna(method='ffill', inplace=True)
+
+        print("Encoding labels in bureau balance...")
+        enc = LabelEncoder()
+        bureau_balance['STATUS'] = enc.fit_transform(bureau_balance['STATUS'])
+        self.labelEncoders['STATUS'] = enc
+
+        # Aggregates on bureau balance by bureau_id
+        self.balance_aggs = {
+            'MONTHS_BALANCE':self.ops[:2],
+            'STATUS':self.ops[:2] + [mode]
+        }
+        print("Applying aggregates on bureau balance ...")
+        bureau_balance_agg = bureau_balance.groupby('SK_ID_BUREAU').agg(self.balance_aggs)
+        bureau_balance_agg.columns = pd.Index([e[0] + '_' + e[1].upper()  for e in bureau_balance_agg.columns.tolist()])
+        bureau_ids = bureau_balance_agg.merge(bureau_ids, on='SK_ID_BUREAU', how='right')
+        bureau_ids.fillna(method='ffill', inplace=True)
+        del bureau_balance_agg
+        gc.collect()
+
+        # Aggregating the aggregates by curr_id
+        self.nested_aggs = {
+            'MONTHS_BALANCE_MIN': self.ops[:2],
+            'MONTHS_BALANCE_MAX': self.ops[:2],
+            'STATUS_MIN': ['min', mode],
+            'STATUS_MAX': ['max', mode],
+            'STATUS_CATEGORICAL_MODE': self.ops[:2]+[mode]
+        }
+        print("Applying aggregates on aggregated balance data...")
+        bureau_balance_agg = bureau_ids.groupby('SK_ID_CURR').agg(self.nested_aggs)
+        bureau_balance_agg.columns = pd.Index([e[0] + '_' + e[1].upper()  for e in bureau_balance_agg.columns.tolist()])
+        df = df.merge(bureau_balance_agg, on='SK_ID_CURR', how='left')
+        del bureau_balance_agg, bureau_ids
+        gc.collect()
+    
         # No. of past credits with credit bureau
+        print("Applying count..")
         bureau_counts = joined[['SK_ID_CURR', 'SK_ID_BUREAU']].groupby('SK_ID_CURR').count()
         bureau_counts.rename(columns={'SK_ID_BUREAU':'COUNT_BUREAU_CREDITS'}, inplace=True)
         df = df.join(bureau_counts, on='SK_ID_CURR', how='left')
@@ -54,7 +102,7 @@ class bureau:
 
 
         # Aggregations on features
-        ops = ['min', 'max', 'mean', 'var']
+        print("Applying aggregates on numerical data..")
         aggs = {
             # Numerical features
             'DAYS_CREDIT': ops,
@@ -82,6 +130,7 @@ class bureau:
         gc.collect()
 
         # taking most recent value for each categorical feature for each ID 
+        print("Applying aggregates on categorical data")
         cat_df = (
             joined [ ['SK_ID_CURR', 'DAYS_CREDIT'] + categorical_cols]
             .loc[joined [['SK_ID_CURR', 'DAYS_CREDIT'] + categorical_cols]
@@ -91,20 +140,19 @@ class bureau:
         df = df.merge(cat_df, on='SK_ID_CURR', how='left')
         del cat_df
         gc.collect()
-
-        # JOINING WITH BUREAU_BALANCE
-        # TODO
-
+        
         # dropping ids and days_credit(as it is same as days_credit_max)
         df.drop(['SK_ID_CURR', 'DAYS_CREDIT'], inplace=True, axis=1)
         
         train_cols = list(set(df.columns)-{'TARGET'})
 
         # lgb 
+        print("Training weighted LGBM Classifier...")
         lgb = LGBMClassifier(class_weight='balanced')
         lgb.fit(df[train_cols], df['TARGET'])
         self.lgb = lgb
         
+        print("Finished processing bureau and bureau_balance...")
         return self
     
     def predict(self, X_test) -> pd.DataFrame:
@@ -122,11 +170,45 @@ class bureau:
         for col in to_drop:
             X_test.drop(col, inplace=True)
         
+        X_test = replace_w_nan(X_test)
+        X_test.fillna(method='ffill', inplace=True)
+
         # Creating new empty dataset to store results in
         df = pd.DataFrame()
         df['SK_ID_CURR'] = X_test['SK_ID_CURR'].unique()        
         
         # FEATURE ENGINEERING
+
+        # JOINING WITH BUREAU_BALANCE
+        bureau_ids = X_test[['SK_ID_BUREAU', 'SK_ID_CURR']]
+        bureau_balance = pd.read_csv('credit_risk/bureau_balance.csv')
+        bureau_balance = bureau_balance.merge(bureau_ids, on='SK_ID_BUREAU', how='inner')
+        bureau_balance = replace_w_nan(bureau_balance)
+        bureau_balance.fillna(method='ffill', inplace=True)
+
+        print("Encoding labels in bureau balance...")
+        bureau_balance['STATUS'] = self.labelEncoders['STATUS'].transform(bureau_balance['STATUS'])
+
+        # Aggregates on bureau balance by bureau_id
+    
+        print("Applying aggregates on bureau balance ...")
+        bureau_balance_agg = bureau_balance.groupby('SK_ID_BUREAU').agg(self.balance_aggs)
+        bureau_balance_agg.columns = pd.Index([e[0] + '_' + e[1].upper()  for e in bureau_balance_agg.columns.tolist()])
+        bureau_ids = bureau_balance_agg.merge(bureau_ids, on='SK_ID_BUREAU', how='right')
+        bureau_ids.fillna(method='ffill', inplace=True)
+
+        del bureau_balance_agg
+        gc.collect()
+
+        # Aggregating the aggregates by curr_id
+
+        print("Applying aggregates on aggregated balance data...")
+        bureau_balance_agg = bureau_ids.groupby('SK_ID_CURR').agg(self.nested_aggs)
+        bureau_balance_agg.columns = pd.Index([e[0] + '_' + e[1].upper()  for e in bureau_balance_agg.columns.tolist()])
+        df = df.merge(bureau_balance_agg, on='SK_ID_CURR', how='left')
+        del bureau_balance_agg, bureau_ids
+        gc.collect()
+
 
         # No. of past credits with credit bureau
         bureau_counts = X_test[['SK_ID_CURR', 'SK_ID_BUREAU']].groupby('SK_ID_CURR').count()
@@ -155,15 +237,12 @@ class bureau:
         del cat_df
         gc.collect()
 
-        # JOINING WITH BUREAU_BALANCE
-        # TODO
-
         # dropping ids and days_credit(as it is same as days_credit_max)
         df.drop(['SK_ID_CURR', 'DAYS_CREDIT'], inplace=True, axis=1)
         
         # lgb 
         lgb = self.lgb
-        pred = lgb.predict(df)
+        pred = lgb.predict_proba(df)[:, 1]
         L1['LGB_Classifier_Bureau'] = pred
 
         return L1

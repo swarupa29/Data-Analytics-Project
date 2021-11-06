@@ -24,7 +24,7 @@ def main() -> None:
     for col in res.columns:
         L1[col] = res[col]
 
-    L1.to_csv('L1.csv', index=False)
+    L1.to_csv('output/L1.csv', index=False)
 
 if __name__ == '__main__':
     main()

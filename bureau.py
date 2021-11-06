@@ -44,9 +44,9 @@ class bureau:
         # Creating dataset to store results in
         df = pd.DataFrame()
         df['SK_ID_CURR'] = joined['SK_ID_CURR'].unique()
-        df['TARGET'] = joined[['SK_ID_CURR', 'TARGET']].groupby('SK_ID_CURR').agg({'TARGET':'mean'})
-        df.dropna(subset=['TARGET'], inplace=True)
-        
+        targets = joined[['SK_ID_CURR', 'TARGET']].groupby('SK_ID_CURR', as_index=False).agg({'TARGET':'mean'})
+        df = targets.merge(df, on='SK_ID_CURR', how='left') 
+        del targets
         
         # FEATURE ENGINEERING
         ops = ['min', 'max', 'mean', 'var']
@@ -158,7 +158,7 @@ class bureau:
     def predict(self, X_test) -> pd.DataFrame:
         
         # Empty dataframe to store model results
-        L1 = pd.DataFrame()
+        L1 = pd.DataFrame(index=X_test['SK_ID_CURR'].unique())
 
        # LABEL ENCODING
         for col in categorical_cols:
@@ -175,7 +175,7 @@ class bureau:
 
         # Creating new empty dataset to store results in
         df = pd.DataFrame()
-        df['SK_ID_CURR'] = X_test['SK_ID_CURR'].unique()        
+        df['SK_ID_CURR'] = X_test['SK_ID_CURR'].unique()      
         
         # FEATURE ENGINEERING
 

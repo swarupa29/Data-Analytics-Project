@@ -1,7 +1,16 @@
 # Put here the functions that might be required by more than 1 model/table
 import pandas as pd
+from numpy import nan 
+import numpy as np
 
+def replace_w_nan(df):
+    df = df.replace('XNA', nan)
+    df = df.replace('XAP', nan)
+    return df
 
+def categorical_mode(arr):
+    return np.argmax(np.bincount(arr))
+    
 class pipeline:
     """
         Fit the data and test each model in the pipeline individulally, while creating

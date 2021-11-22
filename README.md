@@ -28,22 +28,29 @@ Past data from Credit Bureau (An organisation in the US responsible for collecti
 Monthly balance of previous credits in the Credit Bureau
 One row for each month of credit data in each row in bureau.csv. `SK_ID_BUREAU` references the corresponding row in bureau.csv
 
-## `POS_CASH_balance.csv`
-Monthly balance of past POS and cash loans
+## `POS_CASH_balance.csv`:
 
-## `Credit_card_balance.csv`
-Monthly balance of past credit cards of applicant
+Monthly balance snapshots of previous POS (point of sales) and cash loans that the applicant had with Home Credit.
+One row for each month of history of every previous credit in Home Credit (consumer credit and cash loans) related to loans.
 
-## `previous_application.csv`
-Details of previous loan applications at Home Credit
-One row one application
+## `Credit_card_balance.csv`:
 
-## `installments_payments.csv`
-Repayment history of previous disbursed loans 
-1 row for each payment made of payment missed
+Monthly balance snapshots of previous credit cards that the applicant has with Home Credit.
+One row for each month of history of every previous credit in Home Credit.
 
-## `HomeCredit_columns_description.csv`
-Description of all the columns used in the dataset
+## `previous_application.csv`:
+
+Details of previous loan applications at Home Credit.
+One row one application related to loans.
+
+## `installments_payments.csv`:
+
+Repayment history of previous disbursed loans.
+One row for each payment made of payment missed.
+
+## `HomeCredit_columns_description.csv`:
+
+Description of all the columns used in the dataset.
 
 
 

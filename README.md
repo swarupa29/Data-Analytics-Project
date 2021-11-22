@@ -52,6 +52,7 @@ One row for each payment made of payment missed.
 
 Description of all the columns used in the dataset.
 
+![image](https://user-images.githubusercontent.com/54891659/142798878-33484585-0f6f-4939-a564-464c05c5bb51.png)
 
 
 

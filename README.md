@@ -68,7 +68,7 @@ Description of all the columns used in the dataset.
   Note: Since the dataset is very large and cannot be uploaded to github even after zipping, we are attaching the link to the kaggle notebooks. All the data including the train data files, predictions of the level 0 models on train and test data, final prediction of the level 1 model that was submitted to the competition are available in the kaggle notebook named "Ensemble model"  
 
 **Link to code for choosing the level 0 model : https://www.kaggle.com/swarupa29/l0-models** \
-**Link to code for final model which contains all the data as well :  https://www.kaggle.com/swarupa29/ensemble-modelling**
+**Link to code for final model which contains all the data as well :  https://www.kaggle.com/swarupa29/ensemble-model**
 
 
 ## Summary of Kernel

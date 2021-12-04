@@ -64,8 +64,10 @@ Description of all the columns used in the dataset.
   b. Ensemble model - This is the final model code which consists of training each of the tables using level 0 models, predictions on train and test data, using that to train the level 1 model and hence get the final prediction on test data which was then submitted to kaggle.
  5. Final report - This pdf is the final paper for the project
  6. Plagarism report - This is the plagarism report for the paper submitted. The similarity score is 4%.
+ 7. DATA ANALYTICS PROJECT.pptx - Power point presentation used for the recording of the video
 
-  Note: Since the dataset is very large and cannot be uploaded to github even after zipping, we are attaching the link to the dataset. We have also attached the links to the kaggle notebooks used for the models. They can be run on edit mode to reproduce results easily. But the notebook has few private data files which is the predictions of the level 0 models on train and test data.
+  Note: Since the dataset is very large and cannot be uploaded to github even after zipping, we are attaching the link to the dataset. We have also attached the links to the kaggle notebooks used for the models. They can be run on edit mode to reproduce results easily. But the notebook has few private data files which is the predictions of the level 0 models on train and test data.\
+  
 **Link to dataset : https://www.kaggle.com/c/home-credit-default-risk/data** \
 **Link to code for choosing the level 0 model : https://www.kaggle.com/swarupa29/l0-models** \
 **Link to code for final model which contains all the data as well :  https://www.kaggle.com/swarupa29/ensemble-model**
@@ -102,3 +104,6 @@ ROCAUC Score - Train data : 0.91
 
 ### Final
 ROCAUC Score - Public LB : 0.75, Private LB : 0.74
+
+## Steps to reproduce
+Click on the link to the kaggle notebooks and run the notebook on edit mode.

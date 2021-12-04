@@ -65,6 +65,7 @@ Description of all the columns used in the dataset.
  5. Final report - This pdf is the final paper for the project
  6. Plagarism report - This is the plagarism report for the paper submitted. The similarity score is 4%.
  7. DATA ANALYTICS PROJECT.pptx - Power point presentation used for the recording of the video
+ 8. kaggle results - this filder contains the screenshots of the results of submissions to kaggle. It contains the results of the individual tables as well as the final prediction
 
   Note: Since the dataset is very large and cannot be uploaded to github even after zipping, we are attaching the link to the dataset. We have also attached the links to the kaggle notebooks used for the models. They can be run on edit mode to reproduce results easily. But the notebook has few private data files which is the predictions of the level 0 models on train and test data.\
   
